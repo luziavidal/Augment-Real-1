@@ -1,0 +1,634 @@
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/C576EE51-85CC-374C-8B3C-1E2C1740CF49/main.js" charset="UTF-8"></script><script src='ar/three.min.js'></script>
+<script src="ar/ar.min.js"></script>
+<script>THREEx.ArToolkitContext.baseURL = 'ar/'</script>
+
+<title>Realidade Aumentada</title>
+<style type="text/css">
+	html { overflow: hidden; }
+	body { margin: 0; padding: 0; overflow: hidden; font-family: Monospace; font-size: 16px; line-height: 25px; background-color: #a7a7a7; color: #fff; }
+	div.anterior{ width:200px; position:fixed; bottom:30px; background-color: #111; text-align:center; color:#aaaaaa; cursor:pointer; display: none; z-index:2;}
+	div.anterior:hover{ background-color: #3c3c3c; }
+	div.proximo{ width:200px; position:fixed; bottom:30px; right:0px; background-color: #111; text-align:center; color:#aaaaaa; cursor:pointer; display: none; z-index:2;}
+	div.proximo:hover{ background-color: #3c3c3c; }
+	div.titulo{ width:20%; position:absolute; left:40%; top:20px; background-color: #111; text-align:center; color:#aaaaaa; display: none; z-index:2;}
+</style>
+</head>
+
+<body>
+<div id="anterior" class="anterior" onclick="javascript:anterior();"><span>anterior</span></div>
+<div id="proximo" class="proximo" onclick="javascript:proximo();"><span>próximo</span></div>
+<div id="titulo" class="titulo" ><span>exercício 1</span></div>
+
+<script>
+	//////////////////////////////////////////////////////////////////////////////////
+	//		Init
+	//////////////////////////////////////////////////////////////////////////////////
+
+	var modelo3D;
+	
+	// init renderer
+	var renderer	= new THREE.WebGLRenderer({
+		antialias: true,
+		alpha: true
+	});
+	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+	// renderer.setPixelRatio( 1/2 );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.domElement.style.position = 'absolute'
+	renderer.domElement.style.top = '0px'
+	renderer.domElement.style.left = '0px'
+	document.body.appendChild( renderer.domElement );
+
+	// array of functions for the rendering loop
+	var onRenderFcts= [];
+
+	// init scene and camera
+	var scene	= new THREE.Scene();
+	
+	//////////////////////////////////////////////////////////////////////////////////
+	//		Initialize a basic camera
+	//////////////////////////////////////////////////////////////////////////////////
+
+	// Create a camera
+	var camera = new THREE.Camera();
+	scene.add(camera);
+	
+	
+	ambient = new THREE.AmbientLight( '#343434' );
+	scene.add( ambient );
+	
+	// LUZES
+	
+	var directionalLight = new THREE.DirectionalLight( 0x343434, 0.75 );
+	directionalLight.position.set( -1, -1, 1 ).normalize();
+	scene.add( directionalLight );
+
+	var directionalLight2 = new THREE.DirectionalLight( 0x343434, 0.75 );
+	directionalLight2.position.set( -1, 1, 1 ).normalize();
+	scene.add( directionalLight2 );
+
+	var directionalLight3 = new THREE.DirectionalLight( 0x343434, 0.75 );
+	directionalLight3.position.set( 1, 1, 1 ).normalize();
+	scene.add( directionalLight3 );
+
+	var directionalLight4 = new THREE.DirectionalLight( 0x343434, 0.75 );
+	directionalLight4.position.set( 1, -1, 1 ).normalize();
+	scene.add( directionalLight4 );
+	
+	var directionalLight5 = new THREE.DirectionalLight( 0x343434, 0.75 );
+	directionalLight5.position.set( -1, -1, -1 ).normalize();
+	scene.add( directionalLight5 );
+
+	var directionalLight6 = new THREE.DirectionalLight( 0x343434, 0.75 );
+	directionalLight6.position.set( -1, 1, -1 ).normalize();
+	scene.add( directionalLight6 );	
+	
+	var directionalLight7 = new THREE.DirectionalLight( 0x343434, 0.75 );
+	directionalLight7.position.set( 1, 1, -1 ).normalize();
+	scene.add( directionalLight7 );
+
+	var directionalLight8 = new THREE.DirectionalLight( 0x343434, 0.75 );
+	directionalLight8.position.set( 1, -1, -1 ).normalize();
+	scene.add( directionalLight8 );	
+	
+
+	////////////////////////////////////////////////////////////////////////////////
+	//          handle arToolkitSource
+	////////////////////////////////////////////////////////////////////////////////
+
+	var arToolkitSource = new THREEx.ArToolkitSource({
+		// to read from the webcam 
+		sourceType : 'webcam',
+
+		// to read from an image
+		// sourceType : 'image',
+		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/images/img.jpg',		
+
+		// to read from a video
+		// sourceType : 'video',
+		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/videos/headtracking.mp4',		
+	})
+
+	arToolkitSource.init(function onReady(){
+		onResize()
+	})
+	
+	// handle resize
+	window.addEventListener('resize', function(){
+		onResize()
+	})
+	function onResize(){
+		arToolkitSource.onResize()	
+		arToolkitSource.copySizeTo(renderer.domElement)	
+		if( arToolkitContext.arController !== null ){
+			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)	
+		}	
+	}
+	////////////////////////////////////////////////////////////////////////////////
+	//          initialize arToolkitContext
+	////////////////////////////////////////////////////////////////////////////////
+	
+
+	// create atToolkitContext
+	var arToolkitContext = new THREEx.ArToolkitContext({
+		cameraParametersUrl: THREEx.ArToolkitContext.baseURL + 'camera_para.dat',
+		detectionMode: 'mono',
+		maxDetectionRate: 30,
+		canvasWidth: 80*3,
+		canvasHeight: 60*3,
+	})
+	// initialize it
+	arToolkitContext.init(function onCompleted(){
+		// copy projection matrix to camera
+		camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
+	})
+
+	// update artoolkit on every frame
+	onRenderFcts.push(function(){
+		if( arToolkitSource.ready === false )	return
+
+		arToolkitContext.update( arToolkitSource.domElement )
+	})
+	
+	
+	////////////////////////////////////////////////////////////////////////////////
+	//          Create a ArMarkerControls
+	////////////////////////////////////////////////////////////////////////////////
+	
+	var markerRoot = new THREE.Group
+	scene.add(markerRoot)
+	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
+		type : 'pattern',
+		patternUrl : THREEx.ArToolkitContext.baseURL + 'mari32_50.pat'
+		// patternUrl : THREEx.ArToolkitContext.baseURL + 'patt.hiro'
+		// patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji'
+	})
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		add an object in the scene
+	//////////////////////////////////////////////////////////////////////////////////
+	
+	// CARREGANDO... 
+	var manager = new THREE.LoadingManager();
+	manager.onLoad = function () {
+	//console.log('Carregado.');
+	};
+		
+
+	// LINHAS E FACES (MATERIAIS P/ RENDER)
+	var linhas_padrao = new THREE.LineBasicMaterial( {
+		//vertexColors: THREE.VertexColors,
+		color: 0xffffff,
+		linewidth: 2,
+	} );
+	
+	var linhas_destaque = new THREE.LineBasicMaterial( {
+		//vertexColors: THREE.VertexColors,
+		color: 0xff0000,
+		linewidth: 2,
+	} );	
+
+	var faces_padrao = new THREE.MeshPhongMaterial();
+		faces_padrao.shading = THREE.FlatShading;
+		faces_padrao.side=THREE.DoubleSide;
+		faces_padrao.color = new THREE.Color('#336699');
+		faces_padrao.specular = new THREE.Color('#161616');
+		faces_padrao.shininess = 50;	
+
+	var faces_destaque = new THREE.MeshPhongMaterial();
+		faces_destaque.shading = THREE.FlatShading;
+		faces_destaque.side=THREE.DoubleSide;
+		faces_destaque.color = new THREE.Color('#ff0000');
+		faces_destaque.specular = new THREE.Color('#000000');
+		faces_destaque.shininess = 50;
+
+	
+	// GEOMETRIAS (GRUPO)
+	modelo3D = new THREE.Group();
+	
+	//VERTICES (PARA FACES)
+	var ponto = new Array;
+		ponto[0] = new THREE.Vector3( 0, 0, 0 ); //origem
+		ponto[1] = new THREE.Vector3( 3, 0, 4.5 );
+		ponto[2] = new THREE.Vector3( 3, 0, 2.25 );
+		ponto[3] = new THREE.Vector3( 3, 1.5, 2.25 );
+		ponto[4] = new THREE.Vector3( 6, 0, 2.25 );
+		ponto[5] = new THREE.Vector3( 6, 1.5, 2.25 );
+		ponto[6] = new THREE.Vector3( 6, 0, 0 );
+		ponto[7] = new THREE.Vector3( 6, 1.5, 0 );
+		ponto[8] = new THREE.Vector3( 2, 3, 4.5 );
+		ponto[9] = new THREE.Vector3( 3, 3, 4.5 );
+		ponto[10] = new THREE.Vector3( 6, 4.5, 4.5 );
+		ponto[11] = new THREE.Vector3( 6, 3, 0 );
+		ponto[12] = new THREE.Vector3( 6, 4.5, 0 );
+		ponto[13] = new THREE.Vector3( 0, 3, 4.5 );
+		ponto[14] = new THREE.Vector3( 0, 4.5, 4.5 );
+		ponto[15] = new THREE.Vector3( 2, 0, 4.5 );
+		ponto[16] = new THREE.Vector3( 0, 0, 0 );
+		ponto[17] = new THREE.Vector3( 0, 3, 0 );
+		ponto[18] = new THREE.Vector3( 0, 4.5, 0 );
+		ponto[19] = new THREE.Vector3( 3, 3, 0 );
+		ponto[20] = new THREE.Vector3( 3, 1.5, 0 );
+	
+	//VERTICES COM OFFSET (PARA ARESTAS)
+		var offset = 0.015;
+		var ponto_offset = new Array;
+		ponto_offset[0] = new THREE.Vector3( 0, 0, 0 ); //origem
+		ponto_offset[1] = new THREE.Vector3( 3+offset, 0-offset, 4.5+offset ); // +-+
+		ponto_offset[2] = new THREE.Vector3( 3+offset, 0-offset, 2.25+offset ); // +-+
+		ponto_offset[3] = new THREE.Vector3( 3+offset, 1.5+offset, 2.25+offset ); // +++
+		ponto_offset[4] = new THREE.Vector3( 6+offset, 0-offset, 2.25+offset ); // +-+
+		ponto_offset[5] = new THREE.Vector3( 6+offset, 1.5+offset, 2.25+offset ); // +++
+		ponto_offset[6] = new THREE.Vector3( 6+offset, 0-offset, 0-offset ); // +--
+		ponto_offset[7] = new THREE.Vector3( 6+offset, 1.5+offset, 0-offset ); // ++-
+		ponto_offset[8] = new THREE.Vector3( 2-offset, 3-offset, 4.5+offset ); // --+
+		ponto_offset[9] = new THREE.Vector3( 3+offset, 3-offset, 4.5+offset ); // +-+
+		ponto_offset[10] = new THREE.Vector3( 6+offset, 4.5+offset, 4.5+offset ); // +++
+		ponto_offset[11] = new THREE.Vector3( 6+offset, 3-offset, 0-offset ); // +--
+		ponto_offset[12] = new THREE.Vector3( 6+offset, 4.5+offset, 0-offset ); // ++-
+		ponto_offset[13] = new THREE.Vector3( 0-offset, 3-offset, 4.5+offset ); // --+
+		ponto_offset[14] = new THREE.Vector3( 0-offset, 4.5+offset, 4.5+offset ); // -++
+		ponto_offset[15] = new THREE.Vector3( 2-offset, 0-offset, 4.5+offset ); // --+
+		ponto_offset[16] = new THREE.Vector3( 0-offset, 0-offset, 0-offset ); // ---
+		ponto_offset[17] = new THREE.Vector3( 0-offset, 3-offset, 0-offset ); // ---
+		ponto_offset[18] = new THREE.Vector3( 0-offset, 4.5+offset, 0-offset ); // -+-
+		ponto_offset[19] = new THREE.Vector3( 3+offset, 3-offset, 0-offset ); // +--
+		ponto_offset[20] = new THREE.Vector3( 3+offset, 1.5+offset, 0-offset ); // ++-
+
+	//ARESTAS
+	var aresta = new Array;
+		//plano 0
+		aresta[0] = new THREE.Geometry();
+		aresta[0].vertices.push(ponto_offset[1],ponto_offset[2]);
+		aresta[1] = new THREE.Geometry();
+		aresta[1].vertices.push(ponto_offset[2],ponto_offset[4]);
+		aresta[2] = new THREE.Geometry();
+		aresta[2].vertices.push(ponto_offset[4],ponto_offset[6]);
+		aresta[3] = new THREE.Geometry();
+		aresta[3].vertices.push(ponto_offset[6],ponto_offset[16]);
+		aresta[4] = new THREE.Geometry();
+		aresta[4].vertices.push(ponto_offset[16],ponto_offset[15]);
+		aresta[5] = new THREE.Geometry();
+		aresta[5].vertices.push(ponto_offset[15],ponto_offset[1]);
+		aresta[6] = new THREE.Geometry();
+		aresta[6].vertices.push(ponto_offset[15],ponto_offset[16]);
+		//plano 1
+		aresta[7] = new THREE.Geometry();
+		aresta[7].vertices.push(ponto_offset[3],ponto_offset[5]);
+		aresta[8] = new THREE.Geometry();
+		aresta[8].vertices.push(ponto_offset[5],ponto_offset[7]);
+		aresta[9] = new THREE.Geometry();
+		aresta[9].vertices.push(ponto_offset[7],ponto_offset[20]);
+		aresta[10] = new THREE.Geometry();
+		aresta[10].vertices.push(ponto_offset[20],ponto_offset[3]);
+		//plano 2
+		aresta[11] = new THREE.Geometry();
+		aresta[11].vertices.push(ponto_offset[13],ponto_offset[8]);
+		aresta[12] = new THREE.Geometry();
+		aresta[12].vertices.push(ponto_offset[8],ponto_offset[17]);
+		aresta[13] = new THREE.Geometry();
+		aresta[13].vertices.push(ponto_offset[17],ponto_offset[13]);
+		//plano 3
+		aresta[14] = new THREE.Geometry();
+		aresta[14].vertices.push(ponto_offset[9],ponto_offset[11]);
+		aresta[15] = new THREE.Geometry();
+		aresta[15].vertices.push(ponto_offset[11],ponto_offset[19]);
+		aresta[16] = new THREE.Geometry();
+		aresta[16].vertices.push(ponto_offset[19],ponto_offset[9]);
+		//plano 4
+		aresta[17] = new THREE.Geometry();
+		aresta[17].vertices.push(ponto_offset[14],ponto_offset[10]);
+		aresta[18] = new THREE.Geometry();
+		aresta[18].vertices.push(ponto_offset[10],ponto_offset[12]);
+		aresta[19] = new THREE.Geometry();
+		aresta[19].vertices.push(ponto_offset[12],ponto_offset[18]);
+		aresta[20] = new THREE.Geometry();
+		aresta[20].vertices.push(ponto_offset[18],ponto_offset[14]);
+		//plano 5
+		aresta[21] = new THREE.Geometry();
+		aresta[21].vertices.push(ponto_offset[4],ponto_offset[5]);
+		aresta[22] = new THREE.Geometry();
+		aresta[22].vertices.push(ponto_offset[6],ponto_offset[7]);
+		//plano 6
+		aresta[23] = new THREE.Geometry();
+		aresta[23].vertices.push(ponto_offset[1],ponto_offset[9]);
+		aresta[24] = new THREE.Geometry();
+		aresta[24].vertices.push(ponto_offset[19],ponto_offset[20]);
+		aresta[25] = new THREE.Geometry();
+		aresta[25].vertices.push(ponto_offset[2],ponto_offset[3]);
+		//plano 7
+		aresta[26] = new THREE.Geometry();
+		aresta[26].vertices.push(ponto_offset[10],ponto_offset[11]);
+		aresta[27] = new THREE.Geometry();
+		aresta[27].vertices.push(ponto_offset[11],ponto_offset[12]);
+		//plano 8
+		aresta[28] = new THREE.Geometry();
+		aresta[28].vertices.push(ponto_offset[13],ponto_offset[14]);
+		//plano 9
+		aresta[29] = new THREE.Geometry();
+		aresta[29].vertices.push(ponto_offset[9],ponto_offset[10]);
+		aresta[30] = new THREE.Geometry();
+		aresta[30].vertices.push(ponto_offset[8],ponto_offset[15]);
+		//plano 10
+		//plano 11
+		aresta[31] = new THREE.Geometry();
+		aresta[31].vertices.push(ponto_offset[16],ponto_offset[18]);
+		//plano 12
+		//plano 13
+	
+	var arestas = new Array;
+	for (var i=0; i<aresta.length; i++) {	
+		arestas[i] = new THREE.Line( aresta[i], linhas_padrao );
+		modelo3D.add( arestas[i] );
+	}
+		
+	// FACES
+	var plano = new Array;
+	
+		//plano 0
+		plano[0] = new THREE.Geometry();
+		plano[0].vertices.push(ponto[1],ponto[15],ponto[16]);
+		plano[0].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[1] = new THREE.Geometry();
+		plano[1].vertices.push(ponto[1],ponto[2],ponto[16]);
+		plano[1].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[2] = new THREE.Geometry();
+		plano[2].vertices.push(ponto[2],ponto[4],ponto[16]);
+		plano[2].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[3] = new THREE.Geometry();
+		plano[3].vertices.push(ponto[4],ponto[6],ponto[16]);
+		plano[3].faces.push( new THREE.Face3( 0, 1, 2 ) );
+	
+		//plano 1
+		plano[4] = new THREE.Geometry();
+		plano[4].vertices.push(ponto[5],ponto[7],ponto[20]);
+		plano[4].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[5] = new THREE.Geometry();
+		plano[5].vertices.push(ponto[3],ponto[5],ponto[20]);
+		plano[5].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		
+		//plano 2
+		plano[6] = new THREE.Geometry();
+		plano[6].vertices.push(ponto[13],ponto[8],ponto[17]);
+		plano[6].faces.push( new THREE.Face3( 0, 1, 2 ) );
+			
+		//plano 3
+		plano[7] = new THREE.Geometry();
+		plano[7].vertices.push(ponto[9],ponto[11],ponto[19]);
+		plano[7].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		
+		//plano 4
+		plano[8] = new THREE.Geometry();
+		plano[8].vertices.push(ponto[14],ponto[10],ponto[18]);
+		plano[8].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[9] = new THREE.Geometry();
+		plano[9].vertices.push(ponto[10],ponto[12],ponto[18]);
+		plano[9].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		
+		//plano 5
+		plano[10] = new THREE.Geometry();
+		plano[10].vertices.push(ponto[4],ponto[5],ponto[6]);
+		plano[10].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[11] = new THREE.Geometry();
+		plano[11].vertices.push(ponto[5],ponto[6],ponto[7]);
+		plano[11].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		
+		//plano 6
+		plano[12] = new THREE.Geometry();
+		plano[12].vertices.push(ponto[9],ponto[19],ponto[20]);
+		plano[12].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[13] = new THREE.Geometry();
+		plano[13].vertices.push(ponto[9],ponto[20],ponto[3]);
+		plano[13].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[14] = new THREE.Geometry();
+		plano[14].vertices.push(ponto[9],ponto[3],ponto[1]);
+		plano[14].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[15] = new THREE.Geometry();
+		plano[15].vertices.push(ponto[1],ponto[2],ponto[3]);
+		plano[15].faces.push( new THREE.Face3( 0, 1, 2 ) );
+			
+		//plano 7
+		plano[16] = new THREE.Geometry();
+		plano[16].vertices.push(ponto[10],ponto[11],ponto[12]);
+		plano[16].faces.push( new THREE.Face3( 0, 1, 2 ) );
+			
+		//plano 8
+		plano[17] = new THREE.Geometry();
+		plano[17].vertices.push(ponto[13],ponto[14],ponto[17]);
+		plano[17].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[18] = new THREE.Geometry();
+		plano[18].vertices.push(ponto[14],ponto[17],ponto[18]);
+		plano[18].faces.push( new THREE.Face3( 0, 1, 2 ) );
+			
+		//plano 9
+		plano[19] = new THREE.Geometry();
+		plano[19].vertices.push(ponto[14],ponto[10],ponto[9]);
+		plano[19].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[20] = new THREE.Geometry();
+		plano[20].vertices.push(ponto[14],ponto[8],ponto[9]);
+		plano[20].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[21] = new THREE.Geometry();
+		plano[21].vertices.push(ponto[14],ponto[13],ponto[8]);
+		plano[21].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[22] = new THREE.Geometry();
+		plano[22].vertices.push(ponto[9],ponto[8],ponto[15]);
+		plano[22].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[23] = new THREE.Geometry();
+		plano[23].vertices.push(ponto[9],ponto[15],ponto[1]);
+		plano[23].faces.push( new THREE.Face3( 0, 1, 2 ) );
+			
+		//plano 10
+		plano[24] = new THREE.Geometry();
+		plano[24].vertices.push(ponto[2],ponto[3],ponto[4]);
+		plano[24].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[25] = new THREE.Geometry();
+		plano[25].vertices.push(ponto[3],ponto[4],ponto[5]);
+		plano[25].faces.push( new THREE.Face3( 0, 1, 2 ) );
+			
+		//plano 11
+		plano[26] = new THREE.Geometry();
+		plano[26].vertices.push(ponto[18],ponto[11],ponto[12]);
+		plano[26].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[27] = new THREE.Geometry();
+		plano[27].vertices.push(ponto[18],ponto[19],ponto[11]);
+		plano[27].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[28] = new THREE.Geometry();
+		plano[28].vertices.push(ponto[18],ponto[19],ponto[16]);
+		plano[28].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[29] = new THREE.Geometry();
+		plano[29].vertices.push(ponto[16],ponto[19],ponto[20]);
+		plano[29].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[30] = new THREE.Geometry();
+		plano[30].vertices.push(ponto[16],ponto[20],ponto[6]);
+		plano[30].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[31] = new THREE.Geometry();
+		plano[31].vertices.push(ponto[20],ponto[6],ponto[7]);
+		plano[31].faces.push( new THREE.Face3( 0, 1, 2 ) );
+			
+		//plano 12
+		plano[32] = new THREE.Geometry();
+		plano[32].vertices.push(ponto[8],ponto[17],ponto[16]);
+		plano[32].faces.push( new THREE.Face3( 0, 1, 2 ) );
+		plano[33] = new THREE.Geometry();
+		plano[33].vertices.push(ponto[8],ponto[15],ponto[16]);
+		plano[33].faces.push( new THREE.Face3( 0, 1, 2 ) );
+			
+		//plano 13
+		plano[34] = new THREE.Geometry();
+		plano[34].vertices.push(ponto[9],ponto[10],ponto[11]);
+		plano[34].faces.push( new THREE.Face3( 0, 1, 2 ) );
+	
+	var planos = new Array;
+	for (var i=0; i<plano.length; i++) {	
+		//plano[i].computeBoundingSphere();
+		planos[i] = new THREE.Mesh( plano[i], faces_padrao );
+		modelo3D.add( planos[i] );
+	}	
+		
+	// AJUSTES NO MODELO 3D (GRUPO)
+		modelo3D.scale.set(0.2,0.2,0.2);
+		modelo3D.position.x -= 0.2*6/2;
+		modelo3D.position.z += 0.2*4.5/2;
+		modelo3D.rotation.x -= Math.PI/2;
+		
+
+	
+	markerRoot.add( modelo3D );
+	
+	
+	
+
+	
+	onRenderFcts.push(function(){
+		//modelo3D.rotation.x += 0.1
+	})
+	
+	
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		render the whole thing on the page
+	//////////////////////////////////////////////////////////////////////////////////
+	
+	// render the scene
+	onRenderFcts.push(function(){
+		renderer.render( scene, camera );
+	})
+
+	// run the rendering loop
+	var lastTimeMsec= null
+	requestAnimationFrame(function animate(nowMsec){
+		// keep looping
+		requestAnimationFrame( animate );
+		// measure time
+		lastTimeMsec	= lastTimeMsec || nowMsec-1000/60
+		var deltaMsec	= Math.min(200, nowMsec - lastTimeMsec)
+		lastTimeMsec	= nowMsec
+		// call each update function
+		onRenderFcts.forEach(function(onRenderFct){
+			onRenderFct(deltaMsec/1000, nowMsec/1000)
+		})
+	})
+</script>
+
+<script>
+// CORES ARESTAS E FACES
+	
+function cores(quadro){
+	// limpa cores
+	for (var i=0; i<modelo3D.children.length; i++) {	
+		if (modelo3D.children[i].material.isMeshPhongMaterial) {
+			modelo3D.children[i].material = faces_padrao;
+		} else {
+			modelo3D.children[i].material = linhas_padrao;
+		}
+	}	
+	
+	// escolhe faces e arestas de acordo com o quadro
+	// fator de ajuste = arestas (n+1) // ex. 31 arestas + 1 = 32
+	var ajusta = 32;
+	
+	switch(quadro) {
+		case 1:
+			// plano 2
+			modelo3D.children[6+ajusta].material = faces_destaque;
+			// plano 3
+			modelo3D.children[7+ajusta].material = faces_destaque;
+			break;
+		case 2:
+			// aresta 14
+			modelo3D.children[14].material = linhas_destaque;
+			break;
+		case 3:
+			// plano 8
+			modelo3D.children[17+ajusta].material = faces_destaque;
+			modelo3D.children[18+ajusta].material = faces_destaque;
+			break;
+		case 4:
+			// aresta 19
+			modelo3D.children[19].material = linhas_destaque;
+			break;
+		case 5:
+			// plano 4
+			modelo3D.children[8+ajusta].material = faces_destaque;
+			modelo3D.children[9+ajusta].material = faces_destaque;
+			break;
+		case 6:
+			// aresta 19
+			modelo3D.children[15].material = linhas_destaque;
+			break;
+		case 7:
+			// plano 13
+			modelo3D.children[34+ajusta].material = faces_destaque;
+			break;
+		default:
+			// não faz nada (fica com cores padrao)
+	}	
+	
+}
+var total = 7;
+
+
+// Funções dos botões anterior e próximo
+
+if (window.parent.botoes_pai) {
+	var quem = window.parent.document; // mudar botoes no parent (index)
+	//var contador = window.parent.contador;
+} else {
+	var quem = document; // mudar botoes aqui
+	//var contador = 1;
+	window.parent.contador = 1;
+	quem.getElementById('anterior').style.display='none';
+	quem.getElementById('proximo').style.display='block';
+	quem.getElementById('titulo').style.display='block';
+}
+
+cores (window.parent.contador);
+
+function anterior(){
+	window.parent.contador -= 1;	
+	quem.getElementById('proximo').style.display='block';
+	if (window.parent.contador == 1) {
+		quem.getElementById('anterior').style.display='none';
+	}
+	cores(window.parent.contador);
+	quem.getElementById('titulo').innerHTML = "exercício " + window.parent.contador;
+}
+function proximo(){
+	window.parent.contador += 1;
+	quem.getElementById('anterior').style.display='block';
+	if (window.parent.contador == total) {
+		quem.getElementById('proximo').style.display='none';
+	}
+	cores(window.parent.contador);
+	quem.getElementById('titulo').innerHTML = "exercício " + window.parent.contador;
+}
+</script>
+
+</body>
+</html>
