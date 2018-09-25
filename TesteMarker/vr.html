@@ -2,13 +2,15 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="utf-8">
+<meta charset="ISO-8859-1">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/C576EE51-85CC-374C-8B3C-1E2C1740CF49/main.js" charset="UTF-8"></script><script src='ar/three.min.js'></script>
-<script src="ar/ar.min.js"></script>
-<script>THREEx.ArToolkitContext.baseURL = 'ar/'</script>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/C576EE51-85CC-374C-8B3C-1E2C1740CF49/main.js" charset="ISO-8859-1"></script><script src='vr/three.min.js'></script>
+<script src="vr/OrbitControls.js"></script>
+<script src="vr/DeviceOrientationControls.js"></script>
+<script src="vr/StereoEffect.js"></script>
+<script src="vr/Tween.js"></script>
 
-<title>Realidade Aumentada</title>
+<title>Realidade Virtual</title>
 <style type="text/css">
 	html { overflow: hidden; }
 	body { margin: 0; padding: 0; overflow: hidden; font-family: Monospace; font-size: 16px; line-height: 25px; background-color: #a7a7a7; color: #fff; }
@@ -17,53 +19,130 @@
 	div.proximo{ width:200px; position:fixed; bottom:30px; right:0px; background-color: #111; text-align:center; color:#aaaaaa; cursor:pointer; display: none; z-index:2;}
 	div.proximo:hover{ background-color: #3c3c3c; }
 	div.titulo{ width:20%; position:absolute; left:40%; top:20px; background-color: #111; text-align:center; color:#aaaaaa; display: none; z-index:2;}
+	div.conteudo{ display: block; }
+	
+	div.vistas{ position:fixed; background-color: #4b4b4d; color:#e6e7e8; text-align:center; cursor:pointer; }
+	div.vistas:hover{ background-color: #000; color:#fff; }
+	
+	@media screen and (min-aspect-ratio: 1/1) {	
+		div.vistas{ width:5vw; height:5vw; font-size: 2.3vw; line-height: 5vw; }
+		div.va{ top:6vw; left:6vw; display: none;}
+		div.vld{ top:6vw; left:0.5vw; display: none;}
+		div.vle{ top:6vw; left:11.5vw; display: none;}
+		div.vs{ top:11.5vw; left:6vw; display: none;}
+		div.vi{ top:0.5vw; left:6vw; display: none;}
+		div.vp{ top:6vw; left:17vw; display: none;}
+		div.iso{ top:21vw; left:0.5vw; display: none;}
+		div.divVR{ top:26.5vw; left:0.5vw; display: block;}
+	}
+	@media screen and (max-aspect-ratio: 1/1) {
+		div.vistas{ width:5vh; height:5vh; font-size: 2.3vh; line-height: 5vh; }
+		div.va{ top:6vh; left:6vh; display: none;}
+		div.vld{ top:6vh; left:0.5vh; display: none;}
+		div.vle{ top:6vh; left:11.5vh; display: none;}
+		div.vs{ top:11.5vh; left:6vh; display: none;}
+		div.vi{ top:0.5vh; left:6vh; display: none;}
+		div.vp{ top:6vh; left:17vh; display: none;}
+		div.iso{ top:21vh; left:0.5vh; display: none;}
+		div.divVR{ top:26.5vh; left:0.5vh; display: block;}
+	}
+	
 </style>
 </head>
 
 <body>
 <div id="anterior" class="anterior" onclick="javascript:anterior();"><span>anterior</span></div>
-<div id="proximo" class="proximo" onclick="javascript:proximo();"><span>próximo</span></div>
-<div id="titulo" class="titulo" ><span>exercício 1</span></div>
+<div id="proximo" class="proximo" onclick="javascript:proximo();"><span>pr�ximo</span></div>
+<div id="titulo" class="titulo" ><span>exerc�cio 1</span></div>
+<div id="conteudo" class="conteudo" ></div>
+
+<div id="VA" class="vistas va" onclick="javascript:gira('VA');"><span>VA</span></div>
+<div id="VLD" class="vistas vld" onclick="javascript:gira('VLD');"><span>VLD</span></div>
+<div id="VLE" class="vistas vle" onclick="javascript:gira('VLE');"><span>VLE</span></div>
+<div id="VS" class="vistas vs" onclick="javascript:gira('VS');"><span>VS</span></div>
+<div id="VI" class="vistas vi" onclick="javascript:gira('VI');"><span>VI</span></div>
+<div id="VP" class="vistas vp" onclick="javascript:gira('VP');"><span>VP</span></div>
+<div id="ISO" class="vistas iso" onclick="javascript:gira('ISO');"><span>ISO</span></div>
+<div id="divVR" class="vistas divVR" onclick="javascript:trocaCamVR();"><span>cel</span></div>
 
 <script>
 	//////////////////////////////////////////////////////////////////////////////////
-	//		Init
+	//		Inicialização
 	//////////////////////////////////////////////////////////////////////////////////
-
-	var modelo3D;
 	
-	// init renderer
-	var renderer	= new THREE.WebGLRenderer({
-		antialias: true,
-		alpha: true
-	});
-	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
-	// renderer.setPixelRatio( 1/2 );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.domElement.style.position = 'absolute'
-	renderer.domElement.style.top = '0px'
-	renderer.domElement.style.left = '0px'
-	document.body.appendChild( renderer.domElement );
+	// renderer
+	var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+	renderer.setClearColor( 0x000000, 0 );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth , window.innerHeight );
+	
+	// acrescenta na div conteudo
+	var conteudo = document.getElementById( 'conteudo' );
+	conteudo.appendChild( renderer.domElement );
 
-	// array of functions for the rendering loop
-	var onRenderFcts= [];
-
-	// init scene and camera
+	// cria cena
 	var scene	= new THREE.Scene();
 	
+	
 	//////////////////////////////////////////////////////////////////////////////////
-	//		Initialize a basic camera
+	//		CAMERA (para vistas ortográficas!)
 	//////////////////////////////////////////////////////////////////////////////////
 
-	// Create a camera
-	var camera = new THREE.Camera();
-	scene.add(camera);
+	//var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 100000 );
+	var camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 0.01, 1000 );
+	
+	var cam_distz = 10; // maior distância do modelo (com folga, tipo o dobro)
+	
+	// proporção para câmera ortográfica (em função do tamanho do modelo)
+	var cam_distz, cam_escalap, cam_largura, cam_altura;
+	//camera.position.set(0, 0, cam_distz); // inicia na VA
+	camera.position.set(cam_distz, cam_distz, cam_distz); // inicia na ISO
+	
+	function cam_orto() {
+		var proporcao = window.innerWidth / window.innerHeight;
+		if (proporcao < 1) {
+			// ajusta pela largura
+			cam_escalap = cam_distz / window.innerWidth;
+			cam_largura = cam_distz; // cam_escalap * window.innerWidth;
+			cam_altura = cam_escalap * window.innerHeight;
+		} else {
+			// ajusta pela altura
+			cam_escalap = cam_distz / window.innerHeight;
+			cam_largura = cam_escalap * window.innerWidth;
+			cam_altura = cam_distz; //cam_escalap * window.innerHeight;
+		}
+		camera.left = cam_largura / - 2;
+		camera.right = cam_largura / 2;
+		camera.top = cam_altura / 2;
+		camera.bottom = cam_altura / - 2;
+		camera.updateProjectionMatrix(); // atualiza camera
+	}
+	cam_orto(); // chamar essa função sempre que alterar o tamanho da janela!
 	
 	
-	ambient = new THREE.AmbientLight( '#343434' );
+	// PARA OCULOS VR
+	var effect = new THREE.StereoEffect(renderer);
+	var camVR = 0;
+	
+	// CONTROLES - MOUSE INICIALMENTE (OrbitControls), DEPOIS PODE TROCAR PARA OCULOS (DeviceOrientationControls)
+	var controls = new THREE.OrbitControls( camera, renderer.domElement );
+	controls.enabled = true;
+	controls.enableKeys = false;
+	controls.enablePan = false;
+	controls.enableZoom = true;
+	controls.enableRotate = true;
+	
+	
+	
+	//////////////////////////////////////////////////////////////////////////////////
+	//		LUZES
+	//////////////////////////////////////////////////////////////////////////////////
+	
+	// ambiente
+	var ambient = new THREE.AmbientLight( '#343434' );
 	scene.add( ambient );
 	
-	// LUZES
+	// direcionais (uma em cada vista)
 	
 	var directionalLight = new THREE.DirectionalLight( 0x343434, 0.75 );
 	directionalLight.position.set( -1, -1, 1 ).normalize();
@@ -98,90 +177,12 @@
 	scene.add( directionalLight8 );	
 	
 
-	////////////////////////////////////////////////////////////////////////////////
-	//          handle arToolkitSource
-	////////////////////////////////////////////////////////////////////////////////
-
-	var arToolkitSource = new THREEx.ArToolkitSource({
-		// to read from the webcam 
-		sourceType : 'webcam',
-
-		// to read from an image
-		// sourceType : 'image',
-		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/images/img.jpg',		
-
-		// to read from a video
-		// sourceType : 'video',
-		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/videos/headtracking.mp4',		
-	})
-
-	arToolkitSource.init(function onReady(){
-		onResize()
-	})
-	
-	// handle resize
-	window.addEventListener('resize', function(){
-		onResize()
-	})
-	function onResize(){
-		arToolkitSource.onResize()	
-		arToolkitSource.copySizeTo(renderer.domElement)	
-		if( arToolkitContext.arController !== null ){
-			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)	
-		}	
-	}
-	////////////////////////////////////////////////////////////////////////////////
-	//          initialize arToolkitContext
-	////////////////////////////////////////////////////////////////////////////////
-	
-
-	// create atToolkitContext
-	var arToolkitContext = new THREEx.ArToolkitContext({
-		cameraParametersUrl: THREEx.ArToolkitContext.baseURL + 'camera_para.dat',
-		detectionMode: 'mono',
-		maxDetectionRate: 30,
-		canvasWidth: 80*3,
-		canvasHeight: 60*3,
-	})
-	// initialize it
-	arToolkitContext.init(function onCompleted(){
-		// copy projection matrix to camera
-		camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
-	})
-
-	// update artoolkit on every frame
-	onRenderFcts.push(function(){
-		if( arToolkitSource.ready === false )	return
-
-		arToolkitContext.update( arToolkitSource.domElement )
-	})
-	
-	
-	////////////////////////////////////////////////////////////////////////////////
-	//          Create a ArMarkerControls
-	////////////////////////////////////////////////////////////////////////////////
-	
-	var markerRoot = new THREE.Group
-	scene.add(markerRoot)
-	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
-		type : 'pattern',
-		patternUrl : THREEx.ArToolkitContext.baseURL + 'marker.png'
-		// patternUrl : THREEx.ArToolkitContext.baseURL + 'patt.hiro'
-		// patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji'
-	})
-
 	//////////////////////////////////////////////////////////////////////////////////
-	//		add an object in the scene
+	//		ADICIONA OS OBJETOS (tudo no grupo "modelo3D")
 	//////////////////////////////////////////////////////////////////////////////////
-	
-	// CARREGANDO... 
-	var manager = new THREE.LoadingManager();
-	manager.onLoad = function () {
-	//console.log('Carregado.');
-	};
 		
 
-	// LINHAS E FACES (MATERIAIS P/ RENDER)
+	// LINHAS (MATERIAIS P/ RENDER)
 	var linhas_padrao = new THREE.LineBasicMaterial( {
 		//vertexColors: THREE.VertexColors,
 		color: 0xffffff,
@@ -194,6 +195,8 @@
 		linewidth: 2,
 	} );	
 
+	
+	// FACES (MATERIAIS P/ RENDER)
 	var faces_padrao = new THREE.MeshPhongMaterial();
 		faces_padrao.shading = THREE.FlatShading;
 		faces_padrao.side=THREE.DoubleSide;
@@ -210,9 +213,9 @@
 
 	
 	// GEOMETRIAS (GRUPO)
-	modelo3D = new THREE.Group();
+	var modelo3D = new THREE.Group();
 	
-	//VERTICES (PARA FACES)
+	// VERTICES (PARA FACES)
 	var ponto = new Array;
 		ponto[0] = new THREE.Vector3( 0, 0, 0 ); //origem
 		ponto[1] = new THREE.Vector3( 3, 0, 4.5 );
@@ -236,7 +239,7 @@
 		ponto[19] = new THREE.Vector3( 3, 3, 0 );
 		ponto[20] = new THREE.Vector3( 3, 1.5, 0 );
 	
-	//VERTICES COM OFFSET (PARA ARESTAS)
+	// VERTICES COM OFFSET (PARA ARESTAS)
 		var offset = 0.015;
 		var ponto_offset = new Array;
 		ponto_offset[0] = new THREE.Vector3( 0, 0, 0 ); //origem
@@ -486,58 +489,110 @@
 	
 	var planos = new Array;
 	for (var i=0; i<plano.length; i++) {	
-		//plano[i].computeBoundingSphere();
 		planos[i] = new THREE.Mesh( plano[i], faces_padrao );
 		modelo3D.add( planos[i] );
 	}	
 		
 	// AJUSTES NO MODELO 3D (GRUPO)
-		modelo3D.scale.set(0.2,0.2,0.2);
-		modelo3D.position.x -= 0.2*6/2;
-		modelo3D.position.z += 0.2*4.5/2;
+	
+		//modelo3D.scale.set(0.2,0.2,0.2);
+		modelo3D.position.x -= 6/2;
+		modelo3D.position.z += 4.5/2;
+		modelo3D.position.y -= 4.5/2;
 		modelo3D.rotation.x -= Math.PI/2;
-		
-
-	
-	markerRoot.add( modelo3D );
-	
-	
 	
 
-	
-	onRenderFcts.push(function(){
-		//modelo3D.rotation.x += 0.1
-	})
-	
+	// ADICIONA NA CENA
+	scene.add( modelo3D );	
 	
 
 	//////////////////////////////////////////////////////////////////////////////////
-	//		render the whole thing on the page
+	//		FUNÇÕES DE RENDERIZAÇÃO
 	//////////////////////////////////////////////////////////////////////////////////
 	
-	// render the scene
-	onRenderFcts.push(function(){
-		renderer.render( scene, camera );
-	})
+	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+	window.addEventListener( 'resize', onWindowResize, false );
+	
+	var mouseX = 0, mouseY = 0;
+	var windowHalfX = window.innerWidth / 2;
+	var windowHalfY = window.innerHeight / 2;
+	
+	function onWindowResize() {
+		windowHalfX = window.innerWidth / 2;
+		windowHalfY = window.innerHeight / 2;
+		cam_orto();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		effect.setSize( window.innerWidth, window.innerHeight );
+	}
 
-	// run the rendering loop
-	var lastTimeMsec= null
-	requestAnimationFrame(function animate(nowMsec){
-		// keep looping
+	function onDocumentMouseMove( event ) {
+		mouseX = ( event.clientX - windowHalfX );
+		mouseY = ( event.clientY - windowHalfY );
+	}
+
+	var tween = new TWEEN.Tween();
+	function animate() {
 		requestAnimationFrame( animate );
-		// measure time
-		lastTimeMsec	= lastTimeMsec || nowMsec-1000/60
-		var deltaMsec	= Math.min(200, nowMsec - lastTimeMsec)
-		lastTimeMsec	= nowMsec
-		// call each update function
-		onRenderFcts.forEach(function(onRenderFct){
-			onRenderFct(deltaMsec/1000, nowMsec/1000)
-		})
-	})
+		render();
+		TWEEN.update();
+		if (controls) { controls.update(); }
+	}
+
+	function render() {
+		if (camVR == 1) {
+		effect.render(scene, camera);
+		} else {
+		renderer.render(scene, camera);
+		}
+	}
+
+	function trocaCamVR() {
+		
+		window.top.location.href = "vr_oculos.html?contador="+window.parent.contador;
+		window.parent.location = "vr_oculos.html?contador="+window.parent.contador;
+		
+	
+	/*
+		if (camVR == 0) {
+			camVR = 1;
+			controls.enableZoom = false;
+			controls.enablePan = false;
+			
+				function setOrientationControls(e) {
+					if (!e.alpha) {
+						alert ("Seu dispositivo ou navegador parece não suportar essa tecnologia.\nCertifique-se de utilizar um celular ou tablet compatível com óculos VR.");
+						return;
+					}
+					controls = new THREE.DeviceOrientationControls(camera, true);
+					controls.connect();
+					controls.update();
+					window.removeEventListener('deviceorientation', setOrientationControls, true);
+				}
+			
+			window.addEventListener('deviceorientation', setOrientationControls, true);
+			onWindowResize()
+		} else {
+			camVR = 0;
+			controls = new THREE.OrbitControls( camera, renderer.domElement );
+			controls.enableKeys = false;
+			controls.enableZoom = true;
+			controls.enablePan = true;
+			controls.update();
+			onWindowResize()
+		}
+    
+	*/
+	}
+	
+	animate();
 </script>
 
 <script>
-// CORES ARESTAS E FACES
+//SCRIPT TANTO PARA O VR QUANTO PARA O AR
+
+/////////////////////////////
+// CORES DAS ARESTAS E FACES
+////////////////////////////
 	
 function cores(quadro){
 	// limpa cores
@@ -549,8 +604,8 @@ function cores(quadro){
 		}
 	}	
 	
-	// escolhe faces e arestas de acordo com o quadro
-	// fator de ajuste = arestas (n+1) // ex. 31 arestas + 1 = 32
+	// escolhe arestas e faces de acordo com o quadro (exerc�cio)
+	// para faces, fator de ajuste = arestas (n+1) // ex. 31 arestas + 1 = 32
 	var ajusta = 32;
 	
 	switch(quadro) {
@@ -591,12 +646,14 @@ function cores(quadro){
 	}	
 	
 }
-var total = 7;
+var total = 7; // define quando omitir o botão "pr�ximo"!
 
 
-// Funções dos botões anterior e próximo
+////////////////////////////////////////
+// FUNÇÕES DOS BOTÕES ANTERIOR E PRÓXIMO
+////////////////////////////////////////
 
-if (window.parent.botoes_pai) {
+if (window.parent.botoes_pai) { // se a página foi carregada em um iframe
 	var quem = window.parent.document; // mudar botoes no parent (index)
 	//var contador = window.parent.contador;
 } else {
@@ -608,8 +665,10 @@ if (window.parent.botoes_pai) {
 	quem.getElementById('titulo').style.display='block';
 }
 
+// ajuste de cor inicial
 cores (window.parent.contador);
 
+// funções (atualizam o contador e a visibilidade de cada botão)
 function anterior(){
 	window.parent.contador -= 1;	
 	quem.getElementById('proximo').style.display='block';
@@ -617,7 +676,7 @@ function anterior(){
 		quem.getElementById('anterior').style.display='none';
 	}
 	cores(window.parent.contador);
-	quem.getElementById('titulo').innerHTML = "exercício " + window.parent.contador;
+	quem.getElementById('titulo').innerHTML = "exerc�cio " + window.parent.contador;
 }
 function proximo(){
 	window.parent.contador += 1;
@@ -626,8 +685,148 @@ function proximo(){
 		quem.getElementById('proximo').style.display='none';
 	}
 	cores(window.parent.contador);
-	quem.getElementById('titulo').innerHTML = "exercício " + window.parent.contador;
+	quem.getElementById('titulo').innerHTML = "exerc�cio " + window.parent.contador;
 }
+</script>
+
+<script>
+// SCRIPT SÓ PARA O VR
+
+/////////////////////
+// DEFINIR AS VISTAS
+/////////////////////
+
+// tornar os botões visíveis (por padrão estão invisíveis no css)
+document.getElementById('VA').style.display='block';
+document.getElementById('VLD').style.display='block';
+document.getElementById('VLE').style.display='block';
+document.getElementById('VS').style.display='block';
+document.getElementById('VI').style.display='block';
+document.getElementById('VP').style.display='block';
+document.getElementById('ISO').style.display='block';
+
+// CONSIDERANDO QUE O MODELO ESTÁ CENTRALIZADO!
+// camera gira ao redor de uma esfera
+var raio = cam_distz*2;  // de acordo com o tamanho do modelo, ex.: 10
+var ang90 = Math.PI/2; //ex.: valor = raio * Math.cos( ang90 );
+var duracao = 2000; // tempo do movimento na animação, ex.: 2000 ms (2s)
+
+// CALCULO DAS COORDENADAS (os ângulos são todos 0 ou 90°, exceto pela iso 45°)
+// camera.position.x = raio * Math.sin( theta ) * Math.cos( phi );
+// camera.position.y = raio * Math.sin( phi );
+// camera.position.z = raio * Math.cos( theta ) * Math.cos( phi );
+var alvo = { x: 0      , y: 0      , z: 0      };
+var VA =   { x: 0      , y: 0      , z: raio   };
+var VLD =  { x: raio   , y: 0      , z: 0      };
+var VLE =  { x: -raio  , y: 0      , z: 0      };
+var VS =   { x: 0      , y: raio   , z: 0      };
+var VI =   { x: 0      , y: -raio  , z: 0      };
+var VP =   { x: 0      , y: 0      , z: -raio  };
+var ISO =  { x: raio/2 , y: raio/2 , z: raio/2 };
+var vistaprevia = "ISO";
+
+// Define as coordenadas de acordo com o botão clicado (vista)
+function gira (vista) {
+	switch(vista) {
+	case 'VA':
+		alvo = VA;
+		break;
+	case 'VLD':
+		alvo = VLD;
+		break;
+	case 'VLE':
+		alvo = VLE;
+		break;
+	case 'VS':
+		alvo = VS;
+		break;
+	case 'VI':
+		alvo = VI;
+		break;
+	case 'VP':
+		alvo = VP;
+		break;
+	default:
+		// isométrica
+		alvo = ISO;
+	}
+
+	if ( // nao move se já está na posição
+		camera.position.x.toFixed(1) == alvo.x.toFixed(1) 
+		&& camera.position.y.toFixed(1) == alvo.y.toFixed(1) 
+		&& camera.position.z.toFixed(1) == alvo.z.toFixed(1) 
+		) 
+	{
+			//alert ("Essa vista já é a " + vista +"!");
+			return;
+	} else {
+			// chama função
+			girando( camera, alvo, duracao, vista ); 
+	}
+	
+}
+
+// Função para rotação animada
+function girando( objeto, alvo, duracao, vista ) {
+	
+	TWEEN.removeAll(); // elimina eventuais transições em andamento
+	controls.enableRotate = false; // para o mouse não "brigar" com animação
+	var object = objeto; // objeto recebido na função (camera)
+	
+	// 3 posições de transição (alvo recebido na função) // é possível eliminar alguma "zerando" o respectivo tempo (duracaox = 1;)
+	var pos1 = VA;
+	var pos2 = alvo;
+	var pos3 = alvo;
+	
+	// 3 tempos das transições (duracao recebida na função)
+	var duracao1 = duracao;
+	var duracao2 = duracao;
+	var duracao3 = 1; // 1ms só para não "zerar"
+	
+	// regras de transição (vista recebida na função, vistaprevia salva no fim)
+	if (vistaprevia == "VA" && vista != "VA") { duracao1 = 1; } 
+	if (vista == "VA" && vistaprevia != "VP") { duracao2 = 1; } 
+	if (vista == "VP" || vistaprevia == "VP" ) { pos1 = VLE; duracao1 = duracao; } 
+	if (vista == "VP" && vistaprevia == "VLE" ) { pos1 = VP; duracao2=1; } 
+	if (vista == "VLD" && vistaprevia == "VP" ) { pos1 = VLD; duracao2=1; } 
+	if (vista == "VP" && vistaprevia == "VLD" ) { pos1 = VP; duracao2=1; } 
+	if ((vista == "VS" || vista == "VI") && vistaprevia == "VP" ) { pos2 = VA; duracao3=duracao; } 
+	if (vista == "VP" && (vistaprevia == "VS" || vistaprevia == "VI") ) { pos1 = VA; pos2 = VLE; duracao3=duracao; } 
+	vistaprevia = vista;
+	
+	// 3 transições (TWEEN.JS)
+	var mov1 = new TWEEN.Tween( object.position )
+		.to( { x: pos1.x , y: pos1.y , z: pos1.z }, duracao1 )
+		.easing( TWEEN.Easing.Sinusoidal.InOut )
+		.onUpdate( render )
+		; //.start();
+
+	var mov2 = new TWEEN.Tween( object.position )
+		.to( { x: pos2.x , y: pos2.y , z: pos2.z }, duracao2 )
+		.easing( TWEEN.Easing.Sinusoidal.InOut )
+		.onUpdate( render )
+		;
+	
+	var mov3 = new TWEEN.Tween( object.position )
+		.to( { x: pos3.x , y: pos3.y , z: pos3.z }, duracao3 )
+		.easing( TWEEN.Easing.Sinusoidal.InOut )
+		.onUpdate( render )
+		.onComplete ( function() {  // ao finalizar a última transição
+									object.position.x = pos3.x; // para melhor precisão das coordenadas finais
+									object.position.y = pos3.y; 
+									object.position.z = pos3.z; 
+									controls.enableRotate = true; // para habilitar o mouse novamente
+								 }
+					)
+		;
+
+	// executa e encadeia as 3 transições
+	mov1.start();
+	mov1.chain(mov2);
+	mov2.chain(mov3);
+
+}
+
 </script>
 
 </body>

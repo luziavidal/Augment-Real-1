@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="ISO-8859-1">
+<!-- <link rel="canonical" href="https://www.03e0b5-user.freehosting.host/"> -->
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<title>Realidade Aumentada</title>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/C576EE51-85CC-374C-8B3C-1E2C1740CF49/main.js" charset="ISO-8859-1"></script><script src="ar/screenfull.js"></script>
+<style type="text/css">
+
+	html { overflow: hidden; }
+	body { margin: 0; padding: 0; overflow: hidden; font-family: Arial; font-size: 14px; line-height: 20px; background-color: #a7a7a7; color: #fff;  background-image: url("fundo.png");  }
+	:-webkit-full-screen { background-image: url("fundo.png"); }
+	:-moz-full-screen { background-image: url("fundo.png"); }
+	:-ms-fullscreen { background-image: url("fundo.png"); }
+	:fullscreen { background-image: url("fundo.png"); }
+	div.padrao{ background-color: #4b4b4d; text-align:center; color:#e6e7e8; z-index:2;}
+	div.botoes:hover{ background-color: #000; color:#fff; }
+	div.telacheia:hover{ background-color: #000; color:#fff;}
+	iframe { border:none; /* border:1px solid red; */ }
+
+@media screen and (min-aspect-ratio: 1/1) {	
+
+	div.botoes{ position:fixed; width:5vw; height: 5vw; line-height: 5vw; font-size: 3vw; bottom:5%; cursor:pointer; }
+	div.anterior{ left: 13.5vw; }
+	div.proximo{ left:89.5vw; }
+	div.telacheia{ position:absolute; right: 0; top: 0; width:4vw; height: 4vw; cursor:pointer; z-index:1; color:#e6e7e8; white-space:nowrap; word-spacing:-2vw; }
+	div.telacheia1{ position:absolute; right: 0.5vw; top: 0.5vw; width:3vw; height: 3vw; line-height: 3vw; font-size: 2vw; transform: rotate(-45deg); transform-origin: center center 0; z-index:2; pointer-events: none;}	
+	div.arvr{ right:0; top: 4.5vw; width:4vw; height: 4vw; line-height: 4vw; font-size: 1.75vw;}
+	div.conteudo{ width:70vw; height:90%; position:absolute; left:19vw; top:5%; background-color: #111; text-align:center; color:#aaaaaa; cursor:pointer; display: block; z-index:2;}
+	div.titulo{ position:absolute; width:19vw; left:70vw; top:5%; z-index: 5;font-size: 1.5vw; line-height: 2.5vw;  pointer-events: none;}
+	
+	div.vertical{ 
+		transform: rotate(-90deg);
+		 -webkit-transform: rotate(-90deg); /* Safari/Chrome */
+		 -moz-transform: rotate(-90deg); /* Firefox */
+		 -o-transform: rotate(-90deg); /* Opera */
+		 -ms-transform: rotate(-90deg); /* IE 9 */
+
+		transform-origin: left top 0;
+		 -webkit-transform-origin: left top 0;
+		 -moz-transform-origin: left top 0;
+		 -o-transform-origin: left top 0;
+		 -ms-transform-origin: left top 0;
+
+		position: absolute;
+		width: 100vh; /* 100% da altura (vw para largura) */
+		text-align:center;
+		white-space:nowrap;	
+		color:#e6e7e8;
+		font-family: Arial, Helvetica, sans-serif;
+		font-weight:normal;
+		/* text-shadow: 0px 0px 1px #ffffff; */
+	}
+	div.vertical1{ 
+		height: 3vw;
+		left: 2.7vw;
+		bottom: -3vw; /* deslocamento (=altura) por causa da rotaÃ§Ã£o */
+		line-height: 3vw; /* para alinhamento vertical (=altura) */
+		font-size: 2.5vw;
+		z-index:2;
+	}
+	div.vertical2{ 
+		height: 2.5vw;
+		left: 5.8vw;
+		bottom: -2.5vw; /* deslocamento (=altura) por causa da rotaÃ§Ã£o */ 
+		line-height: 2.5vw; /* para alinhamento vertical (=altura) */
+		font-size: 1.8vw;
+		z-index:2;
+	}
+	div.vertical3{ 
+		height: 7vw;
+		left: 2vw;
+		bottom: -7vw; /* deslocamento (=altura) por causa da rotaÃ§Ã£o */
+		background-color: #4b4b4d; 
+		z-index:1;
+	}	
+}
+@media screen and (max-aspect-ratio: 1/1){
+
+	div.botoes{ position:fixed; width:5vh; height: 5vh; line-height: 5vh; font-size: 3.5vh; bottom:2vh; cursor:pointer; }
+	div.anterior{ left: 5% }
+	div.proximo{ right: 5%; }
+	div.telacheia{ position:absolute; right: 0; top: 0; width:4vh; height: 4vh; cursor:pointer; z-index:1; color:#e6e7e8; white-space:nowrap; word-spacing:-2.5vw; }
+	div.telacheia1{ position:absolute; right: 0.5vh; top: 0.6vh; width:3vh; height: 3vh; line-height: 3vh; font-size: 2vh; transform: rotate(-45deg); transform-origin: center center 0; z-index:2; pointer-events: none;}	
+	div.arvr{ right: 4.8vh; top: 0; width:4vh; height: 4vh; line-height: 4vh; font-size: 2vh;}
+	div.conteudo{ width:90%; height:65vh; position:absolute; left:5%; bottom:8vh; background-color: #111; text-align:center; color:#aaaaaa; cursor:pointer; display: block; z-index:2;}
+	div.titulo{ position:absolute; width:20%; right: 5%; height: 2.5vh; bottom:70.5vh; z-index: 5;font-size: 1.5vh; line-height: 2.5vh;  pointer-events: none;}
+	
+	div.vertical{ 
+		transform: none;
+		 -webkit-transform: none; /* Safari and Chrome */
+		 -moz-transform: none; /* Firefox */
+		 -ms-transform: none; /* IE 9 */
+		 -o-transform: none; /* Opera */
+
+		position: absolute;
+		width: 100%;
+		text-align:center;
+		white-space:nowrap;	
+		color:#e6e7e8;
+		font-family: Arial, Helvetica, sans-serif;
+		font-weight:normal;
+	}
+	div.vertical1{ 
+		height: 4vh;
+		left: 0;
+		top: 7vh;
+		line-height: 4vh;
+		font-size: 2.6vh;
+		z-index:2;
+	}
+	div.vertical2{ 
+		height: 3vh;
+		left: 0;
+		top: 10.5vh;
+		line-height: 3vh;
+		font-size: 2vh;
+		z-index:2;
+	}
+	div.vertical3{ 
+		height: 8.5vh;
+		left: 0;
+		top: 6vh;
+		background-color: #4b4b4d; 
+		z-index:1;
+	}
+		
+		
+}
+</style>
+</head>
+
+<body id="corpo">
+<div id="vertical" class="vertical vertical1" ><span>Realidade Aumentada</span></div>
+<div id="vertical2" class="vertical vertical2" ><span>Deise Maria</span></div>
+<div id="vertical3" class="vertical vertical3" ><span>&nbsp;</span></div>
+
+<div id="titulo" class="padrao titulo" ><span>exercício 1</span></div>
+<div id="anterior" class="padrao botoes anterior" onclick="javascript:anterior();"  title="exercício anterior" ><span><</span></div>
+<div id="proximo" class="padrao botoes proximo" onclick="javascript:proximo();" title="próximo exercício" ><span>></span></div>
+<div id="arvr" class="padrao botoes arvr" onclick="javascript:arvr();" title="ir para Realidade Virtual" ><span>VR</span></div>
+
+<div id="telacheia" class="padrao telacheia" onclick="javascript:telacheia();" title="tela cheia"  >
+<div id="telacheia1" class="telacheia1" ><span>&#x21FF;</span></div>
+</div>
+
+<div id="conteudo" class="conteudo" >
+<iframe id="ar" src="ar.html" width="100%" height="100%"> </iframe>
+</div>
+
+<script>
+// para passar funcoes para o iframe de conteudo (ar)
+var iframe_ar= document.getElementById("ar");
+var win = iframe_ar.contentWindow || iframe_ar; // window
+var doc = iframe_ar.contentDocument || iframe_ar.contentWindow.document; //document
+// para chamar a função: win.nome_da_funcao();
+	function anterior() { win.anterior(); }
+	function proximo() { win.proximo(); }
+
+// para o iframe operar com os botes do parent (deste index)
+var botoes_pai = true;
+var contador = 1;
+
+// AR ou VR
+var trocabotao = document.getElementById("arvr");
+var trocadiv = document.getElementById("vertical");
+var trocaanterior = document.getElementById('anterior');
+var trocaproximo = document.getElementById('proximo');
+var trocatitulo = document.getElementById('titulo');
+trocaanterior.style.display='none';
+
+function arvr() {
+	if (trocadiv.innerHTML == "Realidade Virtual") { 	// troca de VR para AR
+		iframe_ar.src= "ar.html";
+		trocabotao.title = "ir para Realidade Virtual";
+		trocabotao.innerHTML = "VR";	
+		trocadiv.innerHTML = "Realidade Aumentada";
+		document.title = "Realidade Aumentada";
+		//trocaanterior.style.display='none';
+		//trocaproximo.style.display='block';
+		//trocatitulo.style.display='block';
+		//trocatitulo.innerHTML = "exercício 1";
+	} else { 											// troca de AR para VR
+		iframe_ar.src= "vr.html";
+		trocabotao.title = "ir para Realidade Aumentada";
+		trocabotao.innerHTML = "AR";	
+		trocadiv.innerHTML = "Realidade Virtual";
+		document.title = "Realidade Virtual";
+		//trocaanterior.style.display='none';
+		//trocaproximo.style.display='none';
+		//trocatitulo.style.display='none';
+	}
+}
+
+// tela cheia  
+function telacheia() {
+	// script screenfull.js (e ajustar css :fullscreen)
+	screenfull.toggle();
+	// outros exemplos de uso: 
+	// if (!screenfull.isFullscreen) { screenfull.request(); } else { screenfull.exit(); }
+	// if (!screenfull.enabled) screenfull.request(iframe_ar);
+	// screenfull.onchange(nome_da_funcao);
+}
+
+</script>
+
+</body>
+</html>

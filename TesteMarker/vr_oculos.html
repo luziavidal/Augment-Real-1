@@ -1,14 +1,26 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/C576EE51-85CC-374C-8B3C-1E2C1740CF49/main.js" charset="UTF-8"></script><script src='ar/three.min.js'></script>
-<script src="ar/ar.min.js"></script>
-<script>THREEx.ArToolkitContext.baseURL = 'ar/'</script>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/C576EE51-85CC-374C-8B3C-1E2C1740CF49/main.js" charset="UTF-8"></script><script src="new/three.min.js"></script>
+<script src="vr/Detector.js"></script>
+<script src="new/OrbitControls.js"></script>
+<script src="new/DeviceOrientationControls.js"></script>
+<script src="vr/dat.gui.min.js"></script>
+<script src="vr/OBJLoader.js"></script>
+<script src="new/StereoEffect.js"></script>
+<script src="ar/screenfull.js"></script>
 
-<title>Realidade Aumentada</title>
+<script>
+// para pegar o número do exercício da página anterior (contador)
+var query = location.search.slice(1);
+var partes = query.split('=');
+var contador = Number( partes[1] );
+if ( Number.isNaN(contador) ) { contador = 0; }
+</script>
+
+<title>Realidade Virtual</title>
 <style type="text/css">
 	html { overflow: hidden; }
 	body { margin: 0; padding: 0; overflow: hidden; font-family: Monospace; font-size: 16px; line-height: 25px; background-color: #a7a7a7; color: #fff; }
@@ -17,6 +29,33 @@
 	div.proximo{ width:200px; position:fixed; bottom:30px; right:0px; background-color: #111; text-align:center; color:#aaaaaa; cursor:pointer; display: none; z-index:2;}
 	div.proximo:hover{ background-color: #3c3c3c; }
 	div.titulo{ width:20%; position:absolute; left:40%; top:20px; background-color: #111; text-align:center; color:#aaaaaa; display: none; z-index:2;}
+	div.conteudo{ display: block; }
+	
+	div.vistas{ position:fixed; background-color: #4b4b4d; color:#e6e7e8; text-align:center; cursor:pointer; }
+	div.vistas:hover{ background-color: #000; color:#fff; }
+	
+	@media screen and (min-aspect-ratio: 1/1) {	
+		div.vistas{ width:5vw; height:5vw; font-size: 2.3vw; line-height: 5vw; }
+		div.va{ top:6vw; left:6vw; display: none;}
+		div.vld{ top:6vw; left:0.5vw; display: none;}
+		div.vle{ top:6vw; left:11.5vw; display: none;}
+		div.vs{ top:11.5vw; left:6vw; display: none;}
+		div.vi{ top:0.5vw; left:6vw; display: none;}
+		div.vp{ top:6vw; left:17vw; display: none;}
+		div.iso{ top:21vw; left:0.5vw; display: none;}
+		div.divVR{ top:26.5vw; left:0.5vw; display: block;}
+	}
+	@media screen and (max-aspect-ratio: 1/1) {
+		div.vistas{ width:5vh; height:5vh; font-size: 2.3vh; line-height: 5vh; }
+		div.va{ top:6vh; left:6vh; display: none;}
+		div.vld{ top:6vh; left:0.5vh; display: none;}
+		div.vle{ top:6vh; left:11.5vh; display: none;}
+		div.vs{ top:11.5vh; left:6vh; display: none;}
+		div.vi{ top:0.5vh; left:6vh; display: none;}
+		div.vp{ top:6vh; left:17vh; display: none;}
+		div.iso{ top:21vh; left:0.5vh; display: none;}
+		div.divVR{ top:26.5vh; left:0.5vh; display: block;}
+	}
 </style>
 </head>
 
@@ -24,46 +63,84 @@
 <div id="anterior" class="anterior" onclick="javascript:anterior();"><span>anterior</span></div>
 <div id="proximo" class="proximo" onclick="javascript:proximo();"><span>próximo</span></div>
 <div id="titulo" class="titulo" ><span>exercício 1</span></div>
+<div id="conteudo" class="conteudo" ></div>
+
+<div id="VA" class="vistas va" onclick="javascript:gira('VA');"><span>VA</span></div>
+<div id="VLD" class="vistas vld" onclick="javascript:gira('VLD');"><span>VLD</span></div>
+<div id="VLE" class="vistas vle" onclick="javascript:gira('VLE');"><span>VLE</span></div>
+<div id="VS" class="vistas vs" onclick="javascript:gira('VS');"><span>VS</span></div>
+<div id="VI" class="vistas vi" onclick="javascript:gira('VI');"><span>VI</span></div>
+<div id="VP" class="vistas vp" onclick="javascript:gira('VP');"><span>VP</span></div>
+<div id="ISO" class="vistas iso" onclick="javascript:gira('ISO');"><span>ISO</span></div>
+<div id="divVR" class="vistas divVR" onclick="javascript:telacheia();"><span>OK!</span></div>
 
 <script>
-	//////////////////////////////////////////////////////////////////////////////////
-	//		Init
-	//////////////////////////////////////////////////////////////////////////////////
+// tela cheia (screenfull.js)
+function telacheia() {
+	if (!screenfull.isFullscreen) { 
+		screenfull.request(); 
+		document.getElementById('divVR').style.display='none';
+	} else { 
+		//screenfull.exit(); 
+	}
+	screenfull.onchange(checatela);
+}
 
-	var modelo3D;
+function checatela() {
+	// script screenfull.js
+	if (!screenfull.isFullscreen) { 
+		document.getElementById('divVR').style.display='block';
+	} else { 
+		//screenfull.exit(); 
+	}
+}
+
+
+// WEBGL
+if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		Inicialização
+	//////////////////////////////////////////////////////////////////////////////////
 	
-	// init renderer
-	var renderer	= new THREE.WebGLRenderer({
-		antialias: true,
-		alpha: true
-	});
-	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
-	// renderer.setPixelRatio( 1/2 );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.domElement.style.position = 'absolute'
-	renderer.domElement.style.top = '0px'
-	renderer.domElement.style.left = '0px'
-	document.body.appendChild( renderer.domElement );
+	// renderer
+	var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+	renderer.setClearColor( 0x000000, 0 );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth , window.innerHeight );
+	
+	// PARA OCULOS VR
+	var effect = new THREE.StereoEffect(renderer);
+	var camVR = 0;
 
-	// array of functions for the rendering loop
-	var onRenderFcts= [];
 
-	// init scene and camera
+	// cria cena
 	var scene	= new THREE.Scene();
-	
-	//////////////////////////////////////////////////////////////////////////////////
-	//		Initialize a basic camera
-	//////////////////////////////////////////////////////////////////////////////////
 
-	// Create a camera
-	var camera = new THREE.Camera();
-	scene.add(camera);
 	
 	
-	ambient = new THREE.AmbientLight( '#343434' );
+	//////////////////////////////////////////////////////////////////////////////////////
+	//		CAMERA (camera "normal", perspectiva para VR)
+	//////////////////////////////////////////////////////////////////////////////////////
+	
+	// distância da câmera para o modelo
+	var cam_distz = 10; // maior distância do modelo (com folga, tipo o dobro)
+	
+	var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 100000 );
+	camera.position.set(0, 0, cam_distz*2 );
+	//camera.lookAt(0,0,0);
+
+		
+	//////////////////////////////////////////////////////////////////////////////////
+	//		LUZES
+	//////////////////////////////////////////////////////////////////////////////////
+	
+	// ambiente
+	var ambient = new THREE.AmbientLight( '#343434' );
 	scene.add( ambient );
 	
-	// LUZES
+	// direcionais (uma em cada vista)
 	
 	var directionalLight = new THREE.DirectionalLight( 0x343434, 0.75 );
 	directionalLight.position.set( -1, -1, 1 ).normalize();
@@ -98,90 +175,13 @@
 	scene.add( directionalLight8 );	
 	
 
-	////////////////////////////////////////////////////////////////////////////////
-	//          handle arToolkitSource
-	////////////////////////////////////////////////////////////////////////////////
-
-	var arToolkitSource = new THREEx.ArToolkitSource({
-		// to read from the webcam 
-		sourceType : 'webcam',
-
-		// to read from an image
-		// sourceType : 'image',
-		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/images/img.jpg',		
-
-		// to read from a video
-		// sourceType : 'video',
-		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/videos/headtracking.mp4',		
-	})
-
-	arToolkitSource.init(function onReady(){
-		onResize()
-	})
-	
-	// handle resize
-	window.addEventListener('resize', function(){
-		onResize()
-	})
-	function onResize(){
-		arToolkitSource.onResize()	
-		arToolkitSource.copySizeTo(renderer.domElement)	
-		if( arToolkitContext.arController !== null ){
-			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)	
-		}	
-	}
-	////////////////////////////////////////////////////////////////////////////////
-	//          initialize arToolkitContext
-	////////////////////////////////////////////////////////////////////////////////
-	
-
-	// create atToolkitContext
-	var arToolkitContext = new THREEx.ArToolkitContext({
-		cameraParametersUrl: THREEx.ArToolkitContext.baseURL + 'camera_para.dat',
-		detectionMode: 'mono',
-		maxDetectionRate: 30,
-		canvasWidth: 80*3,
-		canvasHeight: 60*3,
-	})
-	// initialize it
-	arToolkitContext.init(function onCompleted(){
-		// copy projection matrix to camera
-		camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
-	})
-
-	// update artoolkit on every frame
-	onRenderFcts.push(function(){
-		if( arToolkitSource.ready === false )	return
-
-		arToolkitContext.update( arToolkitSource.domElement )
-	})
-	
-	
-	////////////////////////////////////////////////////////////////////////////////
-	//          Create a ArMarkerControls
-	////////////////////////////////////////////////////////////////////////////////
-	
-	var markerRoot = new THREE.Group
-	scene.add(markerRoot)
-	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
-		type : 'pattern',
-		patternUrl : THREEx.ArToolkitContext.baseURL + 'marker.png'
-		// patternUrl : THREEx.ArToolkitContext.baseURL + 'patt.hiro'
-		// patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji'
-	})
 
 	//////////////////////////////////////////////////////////////////////////////////
-	//		add an object in the scene
+	//		ADICIONA OS OBJETOS (tudo no grupo "modelo3D")
 	//////////////////////////////////////////////////////////////////////////////////
-	
-	// CARREGANDO... 
-	var manager = new THREE.LoadingManager();
-	manager.onLoad = function () {
-	//console.log('Carregado.');
-	};
 		
 
-	// LINHAS E FACES (MATERIAIS P/ RENDER)
+	// LINHAS (MATERIAIS P/ RENDER)
 	var linhas_padrao = new THREE.LineBasicMaterial( {
 		//vertexColors: THREE.VertexColors,
 		color: 0xffffff,
@@ -194,6 +194,8 @@
 		linewidth: 2,
 	} );	
 
+	
+	// FACES (MATERIAIS P/ RENDER)
 	var faces_padrao = new THREE.MeshPhongMaterial();
 		faces_padrao.shading = THREE.FlatShading;
 		faces_padrao.side=THREE.DoubleSide;
@@ -210,9 +212,9 @@
 
 	
 	// GEOMETRIAS (GRUPO)
-	modelo3D = new THREE.Group();
+	var modelo3D = new THREE.Group();
 	
-	//VERTICES (PARA FACES)
+	// VERTICES (PARA FACES)
 	var ponto = new Array;
 		ponto[0] = new THREE.Vector3( 0, 0, 0 ); //origem
 		ponto[1] = new THREE.Vector3( 3, 0, 4.5 );
@@ -236,7 +238,7 @@
 		ponto[19] = new THREE.Vector3( 3, 3, 0 );
 		ponto[20] = new THREE.Vector3( 3, 1.5, 0 );
 	
-	//VERTICES COM OFFSET (PARA ARESTAS)
+	// VERTICES COM OFFSET (PARA ARESTAS)
 		var offset = 0.015;
 		var ponto_offset = new Array;
 		ponto_offset[0] = new THREE.Vector3( 0, 0, 0 ); //origem
@@ -486,58 +488,116 @@
 	
 	var planos = new Array;
 	for (var i=0; i<plano.length; i++) {	
-		//plano[i].computeBoundingSphere();
 		planos[i] = new THREE.Mesh( plano[i], faces_padrao );
 		modelo3D.add( planos[i] );
 	}	
 		
 	// AJUSTES NO MODELO 3D (GRUPO)
-		modelo3D.scale.set(0.2,0.2,0.2);
-		modelo3D.position.x -= 0.2*6/2;
-		modelo3D.position.z += 0.2*4.5/2;
+	
+		//modelo3D.scale.set(0.2,0.2,0.2);
+		modelo3D.position.x -= 6/2;
+		modelo3D.position.z += 4.5/2;
+		modelo3D.position.y -= 4.5/2;
 		modelo3D.rotation.x -= Math.PI/2;
-		
-
-	
-	markerRoot.add( modelo3D );
-	
-	
 	
 
-	
-	onRenderFcts.push(function(){
-		//modelo3D.rotation.x += 0.1
-	})
-	
+	// ADICIONA NA CENA (modelofinal)
+	var modelofinal = new THREE.Group();
+	modelofinal.add(modelo3D);
+	scene.add( modelofinal );	
 	
 
 	//////////////////////////////////////////////////////////////////////////////////
-	//		render the whole thing on the page
+	//		FUNÇÕES DE RENDERIZAÇÃO
 	//////////////////////////////////////////////////////////////////////////////////
-	
-	// render the scene
-	onRenderFcts.push(function(){
-		renderer.render( scene, camera );
-	})
 
-	// run the rendering loop
-	var lastTimeMsec= null
-	requestAnimationFrame(function animate(nowMsec){
-		// keep looping
+
+	// CONTROLES - MOUSE INICIALMENTE (OrbitControls), DEPOIS PODE TROCAR PARA OCULOS (DeviceOrientationControls)
+	var controls = new THREE.OrbitControls( camera, renderer.domElement );
+	controls.enabled = true;
+		controls.enableKeys = false;
+		controls.enablePan = false;
+		controls.enableZoom = true;
+		controls.enableRotate = true;
+	
+
+	// acrescenta na div conteudo
+	var conteudo = document.getElementById( 'conteudo' );
+	conteudo.appendChild( renderer.domElement );
+
+
+	// movimento de mouse e redimensionamento de tela
+	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+	window.addEventListener( 'resize', onWindowResize, false );
+
+	var mouseX = 0, mouseY = 0;
+	var windowHalfX = window.innerWidth / 2;
+	var windowHalfY = window.innerHeight / 2;
+
+	function onWindowResize() {
+		windowHalfX = window.innerWidth / 2;
+		windowHalfY = window.innerHeight / 2;
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		effect.setSize( window.innerWidth, window.innerHeight );
+	}
+
+	function onDocumentMouseMove( event ) {
+		mouseX = ( event.clientX - windowHalfX );
+		mouseY = ( event.clientY - windowHalfY );
+	}
+
+	function animate() {
 		requestAnimationFrame( animate );
-		// measure time
-		lastTimeMsec	= lastTimeMsec || nowMsec-1000/60
-		var deltaMsec	= Math.min(200, nowMsec - lastTimeMsec)
-		lastTimeMsec	= nowMsec
-		// call each update function
-		onRenderFcts.forEach(function(onRenderFct){
-			onRenderFct(deltaMsec/1000, nowMsec/1000)
-		})
-	})
+		render();
+		controls.update();
+	}
+
+	function render() {
+		if (camVR == 1) {
+		effect.render(scene, camera);
+		} else {
+		renderer.render(scene, camera);
+		}
+	}
+
+	function trocaCamVR() {
+		if (camVR == 0) {
+		camVR = 1;
+		controls.enableZoom = false;
+		controls.enablePan = false;
+		function setOrientationControls(e) {
+			if (!e.alpha) {
+				alert ("Seu dispositivo ou navegador parece não suportar essa tecnologia.\nCertifique-se de utilizar um celular ou tablet compatível com óculos VR.");
+				return;
+			}
+			controls = new THREE.DeviceOrientationControls(modelofinal, true);
+			controls.connect();
+			controls.update();
+			window.removeEventListener('deviceorientation', setOrientationControls, true);
+		}
+		window.addEventListener('deviceorientation', setOrientationControls, true);
+		onWindowResize();
+		} else {
+		camVR = 0;
+		controls = new THREE.OrbitControls( camera, renderer.domElement );
+		controls.enableKeys = false;
+		controls.enableZoom = true;
+		controls.enablePan = true;
+		controls.update();
+		onWindowResize();
+		}
+    }
+
+	animate();
+	trocaCamVR();
 </script>
 
 <script>
-// CORES ARESTAS E FACES
+/////////////////////////////
+// CORES DAS ARESTAS E FACES
+////////////////////////////
 	
 function cores(quadro){
 	// limpa cores
@@ -549,8 +609,8 @@ function cores(quadro){
 		}
 	}	
 	
-	// escolhe faces e arestas de acordo com o quadro
-	// fator de ajuste = arestas (n+1) // ex. 31 arestas + 1 = 32
+	// escolhe arestas e faces de acordo com o quadro (exercício)
+	// para faces, fator de ajuste = arestas (n+1) // ex. 31 arestas + 1 = 32
 	var ajusta = 32;
 	
 	switch(quadro) {
@@ -591,43 +651,9 @@ function cores(quadro){
 	}	
 	
 }
-var total = 7;
 
+cores (contador);
 
-// Funções dos botões anterior e próximo
-
-if (window.parent.botoes_pai) {
-	var quem = window.parent.document; // mudar botoes no parent (index)
-	//var contador = window.parent.contador;
-} else {
-	var quem = document; // mudar botoes aqui
-	//var contador = 1;
-	window.parent.contador = 1;
-	quem.getElementById('anterior').style.display='none';
-	quem.getElementById('proximo').style.display='block';
-	quem.getElementById('titulo').style.display='block';
-}
-
-cores (window.parent.contador);
-
-function anterior(){
-	window.parent.contador -= 1;	
-	quem.getElementById('proximo').style.display='block';
-	if (window.parent.contador == 1) {
-		quem.getElementById('anterior').style.display='none';
-	}
-	cores(window.parent.contador);
-	quem.getElementById('titulo').innerHTML = "exercício " + window.parent.contador;
-}
-function proximo(){
-	window.parent.contador += 1;
-	quem.getElementById('anterior').style.display='block';
-	if (window.parent.contador == total) {
-		quem.getElementById('proximo').style.display='none';
-	}
-	cores(window.parent.contador);
-	quem.getElementById('titulo').innerHTML = "exercício " + window.parent.contador;
-}
 </script>
 
 </body>
